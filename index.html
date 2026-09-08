@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal de Documentos — Subida a Google Drive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root{
+    --ink:#12161C;
+    --navy:#1F4E78;
+    --navy-dark:#16334F;
+    --steel:#2E6DA4;
+    --amber:#B8860B;
+    --amber-soft:#D9A441;
+    --paper:#F3F1EA;
+    --paper-card:#FFFFFF;
+    --line:#E1DED3;
+    --ink-soft:#5B5F66;
+    --danger:#B23A2E;
+    --ok:#3F7A4E;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(18,22,28,.06), 0 8px 24px rgba(18,22,28,.08);
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    color:var(--ink);
+    background:var(--paper);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Space Grotesk',system-ui,sans-serif;
+    letter-spacing:-0.01em;
+  }
+  button{font-family:inherit;}
+  a{color:inherit;}
+  .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+
+  /* ============ LOGIN ============ */
+  #view-login{
+    min-height:100vh;
+    display:grid;
+    grid-template-columns: 1.1fr 1fr;
+  }
+  @media (max-width: 860px){
+    #view-login{grid-template-columns: 1fr;}
+    .login-hero{min-height:38vh;}
+  }
+  .login-hero{
+    position:relative;
+    background:
+      linear-gradient(180deg, rgba(18,22,28,.55), rgba(18,22,28,.78)),
+      repeating-linear-gradient(178deg,
+        #1F4E78 0px, #1F4E78 46px,
+        #16334F 46px, #16334F 92px,
+        #2E6DA4 92px, #2E6DA4 136px,
+        #12161C 136px, #12161C 172px,
+        #B8860B 172px, #B8860B 196px,
+        #16334F 196px, #16334F 246px
+      );
+    background-size: cover, auto;
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:48px 56px;
+  }
+  .login-hero .brand{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Space Grotesk'; font-weight:600; font-size:1.05rem;
+    opacity:.92;
+  }
+  .brand .dot{width:9px;height:9px;border-radius:2px;background:var(--amber-soft);}
+  .login-hero .hero-copy h1{
+    font-size:clamp(2.1rem, 4vw, 3.2rem);
+    line-height:1.06;
+    margin:0 0 18px 0;
+    max-width:14ch;
+  }
+  .login-hero .hero-copy p{
+    max-width:42ch;
+    font-size:1.02rem;
+    line-height:1.55;
+    color:#E7EDF3;
+    margin:0;
+  }
+  .login-hero .hero-foot{
+    display:flex; gap:28px; font-size:.85rem; color:#C9D6E3;
+    border-top:1px solid rgba(255,255,255,.18);
+    padding-top:18px;
+  }
+  .login-hero .hero-foot strong{display:block; color:#fff; font-family:'Space Grotesk'; font-size:1.15rem;}
+
+  .login-panel{
+    display:flex; align-items:center; justify-content:center;
+    padding:40px;
+    background:var(--paper);
+  }
+  .login-card{
+    width:100%; max-width:380px;
+  }
+  .login-card h2{font-size:1.5rem; margin:0 0 6px 0;}
+  .login-card .sub{color:var(--ink-soft); font-size:.94rem; margin:0 0 30px 0; line-height:1.5;}
+  #gsi-button-container{ display:flex; justify-content:center; min-height:44px;}
+  .login-divider{
+    display:flex; align-items:center; gap:12px; margin:26px 0 18px 0;
+    color:var(--ink-soft); font-size:.78rem;
+  }
+  .login-divider::before, .login-divider::after{
+    content:""; flex:1; height:1px; background:var(--line);
+  }
+  .setup-note{
+    border:1px solid var(--line);
+    background:var(--paper-card);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    font-size:.82rem;
+    color:var(--ink-soft);
+    line-height:1.55;
+  }
+  .setup-note code{
+    background:#F0EEE6; padding:1px 5px; border-radius:4px; font-size:.78rem;
+  }
+  .config-alert{
+    display:none;
+    border:1px solid #E3B7AE;
+    background:#FBEEEC;
+    color:#7A2E23;
+    border-radius:var(--radius);
+    padding:14px 16px;
+    font-size:.85rem;
+    line-height:1.55;
+    margin-bottom:20px;
+  }
+  .config-alert.show{display:block;}
+  .config-alert strong{display:block; margin-bottom:4px;}
+
+  /* ============ APP SHELL ============ */
+  #view-app{display:none; min-height:100vh;}
+  #view-app.show{display:flex;}
+  .sidebar{
+    width:236px; flex-shrink:0;
+    background:var(--ink);
+    color:#E9ECEF;
+    display:flex; flex-direction:column;
+    padding:22px 16px;
+  }
+  .sidebar .brand{
+    display:flex; align-items:center; gap:9px;
+    font-family:'Space Grotesk'; font-weight:600; font-size:1rem;
+    padding:0 8px 22px 8px; color:#fff;
+  }
+  .brand .dot{width:9px;height:9px;border-radius:2px;background:var(--amber-soft);flex-shrink:0;}
+  .nav-item{
+    display:flex; align-items:center; gap:11px;
+    padding:11px 12px; border-radius:8px;
+    font-size:.92rem; color:#C7CCD3; cursor:pointer;
+    border:none; background:none; width:100%; text-align:left;
+    margin-bottom:2px;
+  }
+  .nav-item svg{width:18px; height:18px; flex-shrink:0;}
+  .nav-item:hover{background:rgba(255,255,255,.06); color:#fff;}
+  .nav-item.active{background:var(--navy); color:#fff;}
+  .sidebar-spacer{flex:1;}
+  .sidebar .user-box{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 8px; border-top:1px solid rgba(255,255,255,.1);
+    margin-top:8px;
+  }
+  .avatar{
+    width:32px; height:32px; border-radius:50%;
+    background:var(--steel); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.8rem; font-weight:600; flex-shrink:0; overflow:hidden;
+  }
+  .avatar img{width:100%; height:100%; object-fit:cover;}
+  .user-box .u-meta{min-width:0;}
+  .user-box .u-name{font-size:.83rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .user-box .u-mail{font-size:.72rem; color:#9AA1AA; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  .main{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 32px; border-bottom:1px solid var(--line);
+    background:var(--paper-card);
+  }
+  .topbar h2{margin:0; font-size:1.15rem;}
+  .topbar .folder-chip{
+    display:flex; align-items:center; gap:8px;
+    font-size:.8rem; color:var(--ink-soft);
+    border:1px solid var(--line); padding:6px 12px; border-radius:20px;
+    background:var(--paper);
+  }
+  .folder-chip svg{width:14px;height:14px;}
+  .content{padding:28px 32px; overflow-y:auto; flex:1;}
+
+  .menu-toggle{display:none; background:none; border:none; padding:6px; cursor:pointer;}
+  @media (max-width: 780px){
+    .sidebar{
+      position:fixed; inset:0 auto 0 0; z-index:40;
+      transform:translateX(-100%); transition:transform .22s ease;
+    }
+    .sidebar.open{transform:translateX(0);}
+    .menu-toggle{display:block;}
+  }
+
+  /* Cards, dashboard */
+  .grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:28px;}
+  @media (max-width:700px){.grid-3{grid-template-columns:1fr;}}
+  .stat-card{
+    background:var(--paper-card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px 20px;
+  }
+  .stat-card .k{font-size:.78rem; color:var(--ink-soft); margin-bottom:8px;}
+  .stat-card .v{font-family:'Space Grotesk'; font-size:1.7rem; font-weight:600;}
+  .stat-card .v small{font-size:.9rem; color:var(--ink-soft); font-weight:500;}
+
+  .panel{
+    background:var(--paper-card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:24px; margin-bottom:20px;
+  }
+  .panel h3{margin:0 0 4px 0; font-size:1.02rem;}
+  .panel .panel-sub{color:var(--ink-soft); font-size:.86rem; margin:0 0 18px 0;}
+
+  /* Upload zone */
+  .dropzone{
+    border:1.5px dashed var(--line);
+    border-radius:var(--radius);
+    padding:38px 20px;
+    text-align:center;
+    background:var(--paper);
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .dropzone.drag{border-color:var(--steel); background:#EAF1F8;}
+  .dropzone svg{width:34px; height:34px; color:var(--steel); margin-bottom:10px;}
+  .dropzone .dz-title{font-weight:600; font-size:.96rem; margin-bottom:4px;}
+  .dropzone .dz-sub{font-size:.82rem; color:var(--ink-soft);}
+  .dropzone .dz-sub b{color:var(--steel); text-decoration:underline;}
+
+  .file-row{
+    display:flex; align-items:center; gap:12px;
+    border:1px solid var(--line); border-radius:8px;
+    padding:12px 14px; margin-top:14px;
+    background:var(--paper);
+  }
+  .file-row .f-icon{
+    width:34px;height:34px;border-radius:7px;background:#FBEDE0;color:var(--amber);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .file-row .f-icon svg{width:18px;height:18px;}
+  .file-row .f-meta{flex:1; min-width:0;}
+  .file-row .f-name{font-size:.88rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .file-row .f-size{font-size:.76rem; color:var(--ink-soft);}
+  .file-row .f-remove{
+    background:none;border:none;cursor:pointer;color:var(--ink-soft);padding:4px;
+  }
+  .file-row .f-remove:hover{color:var(--danger);}
+
+  .progress-track{height:6px; background:var(--line); border-radius:4px; overflow:hidden; margin-top:14px; display:none;}
+  .progress-track.show{display:block;}
+  .progress-bar{height:100%; width:0%; background:var(--steel); transition:width .2s;}
+
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:.88rem; font-weight:600;
+    padding:11px 20px; border-radius:8px; border:none; cursor:pointer;
+    background:var(--navy); color:#fff;
+    transition:background .15s, transform .05s;
+  }
+  .btn:hover{background:var(--navy-dark);}
+  .btn:active{transform:scale(.98);}
+  .btn:disabled{background:#B9C3CC; cursor:not-allowed;}
+  .btn svg{width:16px;height:16px;}
+  .btn.ghost{background:transparent; color:var(--ink); border:1px solid var(--line);}
+  .btn.ghost:hover{background:var(--paper);}
+
+  .status-msg{
+    display:flex; align-items:flex-start; gap:10px;
+    font-size:.85rem; border-radius:8px; padding:12px 14px; margin-top:16px;
+    line-height:1.5;
+  }
+  .status-msg.ok{background:#E9F3EB; color:var(--ok); border:1px solid #C3DEC8;}
+  .status-msg.err{background:#FBEEEC; color:var(--danger); border:1px solid #E3B7AE;}
+  .status-msg.info{background:#EAF1F8; color:var(--steel); border:1px solid #C7DBEC;}
+  .status-msg svg{width:16px;height:16px; flex-shrink:0; margin-top:1px;}
+
+  table{width:100%; border-collapse:collapse; font-size:.87rem;}
+  thead th{
+    text-align:left; font-size:.74rem; text-transform:none; color:var(--ink-soft);
+    border-bottom:1px solid var(--line); padding:0 12px 10px 12px; font-weight:600;
+  }
+  tbody td{padding:12px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  .doc-name{display:flex; align-items:center; gap:10px; font-weight:600;}
+  .doc-name svg{width:16px;height:16px; color:var(--amber); flex-shrink:0;}
+  .muted{color:var(--ink-soft);}
+  .empty-state{
+    text-align:center; padding:40px 20px; color:var(--ink-soft); font-size:.9rem;
+  }
+  .link-btn{
+    color:var(--steel); font-size:.83rem; font-weight:600; text-decoration:none;
+    display:inline-flex; align-items:center; gap:5px;
+  }
+  .link-btn:hover{text-decoration:underline;}
+
+  .spinner{
+    width:15px;height:15px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.4); border-top-color:#fff;
+    animation:spin .7s linear infinite; display:inline-block;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- VISTA: LOGIN                                                  -->
+<!-- ============================================================ -->
+<div id="view-login">
+  <div class="login-hero">
+    <div class="brand"><span class="dot"></span> PORTAL DE DOCUMENTOS</div>
+    <div class="hero-copy">
+      <h1>Sube tus PDF directo a Google&nbsp;Drive.</h1>
+      <p>Inicia sesión con tu cuenta de Google, entra al menú de carga y tus documentos quedan guardados en la carpeta del equipo — sin adjuntar correos ni buscar carpetas compartidas.</p>
+    </div>
+    <div class="hero-foot">
+      <div><strong>1 clic</strong>para iniciar sesión</div>
+      <div><strong>PDF</strong>formato admitido</div>
+      <div><strong>Drive</strong>guardado automático</div>
+    </div>
+  </div>
+
+  <div class="login-panel">
+    <div class="login-card">
+
+      <div id="config-alert" class="config-alert">
+        <strong>Falta configurar el acceso a Google</strong>
+        Reemplaza <code>GOOGLE_CLIENT_ID</code> en el bloque de configuración de este archivo por el Client ID de tu proyecto de Google Cloud antes de usarlo. Revisa las instrucciones al final de esta página.
+      </div>
+
+      <h2>Iniciar sesión</h2>
+      <p class="sub">Usa tu cuenta corporativa de Google para acceder al portal y habilitar la subida de archivos a Drive.</p>
+
+      <div id="gsi-button-container" style="display:none;"></div>
+      <button id="btn-fallback-login" class="btn" style="width:100%; justify-content:center; display:none;">
+        Continuar con Google
+      </button>
+
+      <div id="login-status"></div>
+
+      <div class="login-divider">CÓMO FUNCIONA</div>
+      <div class="setup-note">
+        Al iniciar sesión se te pedirá autorizar el acceso a Google Drive. El portal solo administra la carpeta
+        <code id="folder-name-preview">Documentos PDF</code> que crea dentro de tu propio Drive — no revisa el resto de tus archivos.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- VISTA: APP (post-login)                                       -->
+<!-- ============================================================ -->
+<div id="view-app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><span class="dot"></span> PORTAL DE DOCUMENTOS</div>
+
+    <button class="nav-item active" data-view="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>
+      Inicio
+    </button>
+    <button class="nav-item" data-view="upload">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+      Subir PDF
+    </button>
+    <button class="nav-item" data-view="files">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>
+      Mis archivos
+    </button>
+
+    <div class="sidebar-spacer"></div>
+
+    <button class="nav-item" id="btn-logout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      Cerrar sesión
+    </button>
+    <div class="user-box">
+      <div class="avatar" id="user-avatar">–</div>
+      <div class="u-meta">
+        <div class="u-name" id="user-name">—</div>
+        <div class="u-mail" id="user-mail">—</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="menu-toggle" id="btn-menu-toggle" aria-label="Abrir menú">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <h2 id="topbar-title">Inicio</h2>
+      </div>
+      <div class="folder-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>
+        <span id="folder-chip-text">Carpeta: —</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ---------- INICIO ---------- -->
+      <section id="section-home">
+        <div class="grid-3">
+          <div class="stat-card">
+            <div class="k">Archivos en la carpeta</div>
+            <div class="v" id="stat-count">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="k">Última subida</div>
+            <div class="v" id="stat-last" style="font-size:1.05rem;">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="k">Carpeta de destino</div>
+            <div class="v" id="stat-folder" style="font-size:1.05rem;">—</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Bienvenido/a</h3>
+          <p class="panel-sub">Usa el menú de la izquierda para subir un nuevo PDF o revisar los archivos ya guardados en Drive.</p>
+          <button class="btn" data-goto="upload">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+            Subir un PDF
+          </button>
+        </div>
+      </section>
+
+      <!-- ---------- SUBIR PDF ---------- -->
+      <section id="section-upload" style="display:none;">
+        <div class="panel">
+          <h3>Subir documento PDF</h3>
+          <p class="panel-sub">El archivo se guardará automáticamente en la carpeta de Google Drive indicada arriba.</p>
+
+          <div class="dropzone" id="dropzone">
+            <input type="file" id="file-input" accept="application/pdf" class="visually-hidden">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+            <div class="dz-title">Arrastra tu archivo PDF aquí</div>
+            <div class="dz-sub">o <b>haz clic para elegirlo</b> desde tu computador · máx. 25&nbsp;MB</div>
+          </div>
+
+          <div id="file-preview"></div>
+          <div class="progress-track" id="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+          <div id="upload-status"></div>
+
+          <div style="margin-top:18px; display:flex; gap:10px;">
+            <button class="btn" id="btn-upload" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+              <span id="btn-upload-label">Subir a Google Drive</span>
+            </button>
+            <button class="btn ghost" id="btn-clear" style="display:none;">Quitar archivo</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- MIS ARCHIVOS ---------- -->
+      <section id="section-files" style="display:none;">
+        <div class="panel">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+            <div>
+              <h3 style="margin-bottom:2px;">Archivos en Drive</h3>
+              <p class="panel-sub" style="margin-bottom:0;">Documentos guardados en la carpeta del portal.</p>
+            </div>
+            <button class="btn ghost" id="btn-refresh-files">Actualizar</button>
+          </div>
+          <div id="files-table-wrap"></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   CONFIGURACIÓN — edita estos valores antes de publicar el portal
+   =====================================================================
+   1) Ve a https://console.cloud.google.com/ y crea (o reutiliza) un proyecto.
+   2) Habilita la "Google Drive API" en APIs y servicios > Biblioteca.
+   3) Ve a APIs y servicios > Pantalla de consentimiento OAuth y complétala
+      (tipo "Externo" o "Interno" según tu organización).
+   4) Ve a APIs y servicios > Credenciales > Crear credenciales >
+      ID de cliente de OAuth > Tipo "Aplicación web".
+   5) En "Orígenes de JavaScript autorizados" agrega el dominio donde
+      publicarás este archivo (ej: https://tuempresa.com). No funciona
+      abriendo el archivo directo con doble clic (file://); debe servirse
+      por http/https, incluso local (ej. http://localhost:5500).
+   6) Copia el "ID de cliente" generado y pégalo abajo en GOOGLE_CLIENT_ID.
+   ===================================================================== */
+const CONFIG = {
+  GOOGLE_CLIENT_ID: "1030447637042-cvms71m63ukg8442fdhppen99i3n5phc.apps.googleusercontent.com",
+  DRIVE_SCOPE: "https://www.googleapis.com/auth/drive.file",
+  // Nombre de la carpeta que el portal creará (una sola vez) dentro del
+  // Drive del usuario que inicia sesión, y donde se guardarán los PDF.
+  FOLDER_NAME: "Documentos PDF",
+  MAX_FILE_MB: 25,
+};
+
+/* ===================================================================== */
+
+const state = {
+  accessToken: null,
+  tokenClient: null,
+  folderId: localStorage.getItem("pdfportal_folder_id") || null,
+  selectedFile: null,
+  user: null,
+};
+
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+
+document.getElementById("folder-name-preview").textContent = CONFIG.FOLDER_NAME;
+
+function isConfigured() {
+  return CONFIG.GOOGLE_CLIENT_ID && !CONFIG.GOOGLE_CLIENT_ID.includes("TU_CLIENT_ID_AQUI");
+}
+
+function iconSvg(name) {
+  const icons = {
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>',
+    alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>',
+    pdf: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" opacity=".18"/><path d="M14 2v6h6"/><path d="M8 13h1.2a1.4 1.4 0 0 1 0 2.8H8Zm0 0v4.4M13 13v4.4M13 15.2h1.3M17 13v4.4M17 15.2h1.3" stroke="currentColor" stroke-width="1.3" fill="none"/></svg>',
+  };
+  return icons[name] || "";
+}
+
+function statusMessage(container, type, text) {
+  container.innerHTML = `<div class="status-msg ${type}">${iconSvg(type === "ok" ? "check" : type === "err" ? "alert" : "info")}<div>${text}</div></div>`;
+}
+
+/* ---------------------------------------------------------------------
+   Google Identity Services — inicio de sesión + token de Drive
+--------------------------------------------------------------------- */
+function initGoogle() {
+  if (!isConfigured()) {
+    document.getElementById("config-alert").classList.add("show");
+    document.getElementById("btn-fallback-login").style.display = "inline-flex";
+    document.getElementById("btn-fallback-login").disabled = true;
+    document.getElementById("btn-fallback-login").textContent = "Configura GOOGLE_CLIENT_ID para continuar";
+    return;
+  }
+
+  state.tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CONFIG.GOOGLE_CLIENT_ID,
+    scope: CONFIG.DRIVE_SCOPE + " openid email profile",
+    callback: async (resp) => {
+      if (resp.error) {
+        statusMessage($("#login-status"), "err", "No se pudo completar el inicio de sesión: " + resp.error);
+        return;
+      }
+      state.accessToken = resp.access_token;
+      await afterLogin();
+    },
+  });
+
+  const btn = document.getElementById("btn-fallback-login");
+  btn.style.display = "inline-flex";
+  btn.disabled = false;
+  btn.textContent = "Continuar con Google";
+  btn.addEventListener("click", () => {
+    statusMessage($("#login-status"), "info", "Abriendo la ventana de inicio de sesión de Google…");
+    state.tokenClient.requestAccessToken({ prompt: "consent" });
+  });
+}
+
+async function afterLogin() {
+  statusMessage($("#login-status"), "info", '<span class="spinner"></span> Verificando cuenta y preparando tu carpeta en Drive…');
+  try {
+    const profile = await fetchUserInfo();
+    state.user = profile;
+    renderUser(profile);
+    await ensureFolder();
+    showApp();
+    goToView("home");
+    refreshHomeStats();
+  } catch (err) {
+    console.error(err);
+    statusMessage($("#login-status"), "err", "Ocurrió un problema al preparar tu cuenta: " + err.message);
+  }
+}
+
+async function fetchUserInfo() {
+  const r = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+    headers: { Authorization: "Bearer " + state.accessToken },
+  });
+  if (!r.ok) throw new Error("No se pudo obtener el perfil de Google");
+  return r.json();
+}
+
+function renderUser(profile) {
+  document.getElementById("user-name").textContent = profile.name || profile.email;
+  document.getElementById("user-mail").textContent = profile.email || "";
+  const avatar = document.getElementById("user-avatar");
+  if (profile.picture) {
+    avatar.innerHTML = `<img src="${profile.picture}" alt="">`;
+  } else {
+    avatar.textContent = (profile.name || profile.email || "?").charAt(0).toUpperCase();
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Drive: crear/reutilizar la carpeta de destino
+--------------------------------------------------------------------- */
+async function driveFetch(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      Authorization: "Bearer " + state.accessToken,
+      ...(options.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Drive API (${res.status}): ${body.slice(0, 200)}`);
+  }
+  return res.json();
+}
+
+async function ensureFolder() {
+  if (state.folderId) {
+    try {
+      await driveFetch(`https://www.googleapis.com/drive/v3/files/${state.folderId}?fields=id,name,trashed`);
+      updateFolderUI();
+      return state.folderId;
+    } catch (e) {
+      state.folderId = null; // la carpeta guardada ya no es válida; se recrea
+    }
+  }
+
+  const q = encodeURIComponent(
+    `name='${CONFIG.FOLDER_NAME.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+  );
+  const list = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`);
+
+  if (list.files && list.files.length > 0) {
+    state.folderId = list.files[0].id;
+  } else {
+    const created = await driveFetch("https://www.googleapis.com/drive/v3/files", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: CONFIG.FOLDER_NAME, mimeType: "application/vnd.google-apps.folder" }),
+    });
+    state.folderId = created.id;
+  }
+  localStorage.setItem("pdfportal_folder_id", state.folderId);
+  updateFolderUI();
+  return state.folderId;
+}
+
+function updateFolderUI() {
+  document.getElementById("folder-chip-text").textContent = "Carpeta: " + CONFIG.FOLDER_NAME;
+  document.getElementById("stat-folder").textContent = CONFIG.FOLDER_NAME;
+}
+
+/* ---------------------------------------------------------------------
+   Navegación entre vistas del menú
+--------------------------------------------------------------------- */
+function showApp() {
+  document.getElementById("view-login").style.display = "none";
+  document.getElementById("view-app").classList.add("show");
+}
+
+function goToView(view) {
+  ["home", "upload", "files"].forEach((v) => {
+    document.getElementById("section-" + v).style.display = v === view ? "block" : "none";
+  });
+  $$(".nav-item[data-view]").forEach((btn) => btn.classList.toggle("active", btn.dataset.view === view));
+  const titles = { home: "Inicio", upload: "Subir PDF", files: "Mis archivos" };
+  document.getElementById("topbar-title").textContent = titles[view];
+  if (view === "files") loadFileList();
+  document.getElementById("sidebar").classList.remove("open");
+}
+
+$$(".nav-item[data-view]").forEach((btn) => btn.addEventListener("click", () => goToView(btn.dataset.view)));
+$$("[data-goto]").forEach((btn) => btn.addEventListener("click", () => goToView(btn.dataset.goto)));
+
+document.getElementById("btn-menu-toggle").addEventListener("click", () => {
+  document.getElementById("sidebar").classList.toggle("open");
+});
+
+document.getElementById("btn-logout").addEventListener("click", () => {
+  if (state.accessToken) {
+    google.accounts.oauth2.revoke(state.accessToken, () => {});
+  }
+  state.accessToken = null;
+  state.user = null;
+  document.getElementById("view-app").classList.remove("show");
+  document.getElementById("view-login").style.display = "grid";
+  $("#login-status").innerHTML = "";
+});
+
+/* ---------------------------------------------------------------------
+   Subida de PDF
+--------------------------------------------------------------------- */
+const dropzone = document.getElementById("dropzone");
+const fileInput = document.getElementById("file-input");
+
+dropzone.addEventListener("click", () => fileInput.click());
+["dragenter", "dragover"].forEach((evt) =>
+  dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.add("drag"); })
+);
+["dragleave", "drop"].forEach((evt) =>
+  dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.remove("drag"); })
+);
+dropzone.addEventListener("drop", (e) => {
+  const f = e.dataTransfer.files[0];
+  if (f) handleFileSelected(f);
+});
+fileInput.addEventListener("change", (e) => {
+  if (e.target.files[0]) handleFileSelected(e.target.files[0]);
+});
+
+function formatBytes(bytes) {
+  if (!bytes) return "0 KB";
+  const units = ["B", "KB", "MB", "GB"];
+  let i = 0, n = bytes;
+  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+  return n.toFixed(i === 0 ? 0 : 1) + " " + units[i];
+}
+
+function handleFileSelected(file) {
+  $("#upload-status").innerHTML = "";
+  if (file.type !== "application/pdf") {
+    statusMessage($("#upload-status"), "err", "Solo se admiten archivos en formato PDF.");
+    return;
+  }
+  if (file.size > CONFIG.MAX_FILE_MB * 1024 * 1024) {
+    statusMessage($("#upload-status"), "err", `El archivo supera el límite de ${CONFIG.MAX_FILE_MB} MB.`);
+    return;
+  }
+  state.selectedFile = file;
+  document.getElementById("file-preview").innerHTML = `
+    <div class="file-row">
+      <div class="f-icon">${iconSvg("pdf")}</div>
+      <div class="f-meta">
+        <div class="f-name">${file.name}</div>
+        <div class="f-size">${formatBytes(file.size)}</div>
+      </div>
+      <button class="f-remove" id="btn-remove-file" title="Quitar archivo">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>`;
+  document.getElementById("btn-remove-file").addEventListener("click", clearSelectedFile);
+  document.getElementById("btn-upload").disabled = false;
+  document.getElementById("btn-clear").style.display = "inline-flex";
+}
+
+function clearSelectedFile() {
+  state.selectedFile = null;
+  fileInput.value = "";
+  document.getElementById("file-preview").innerHTML = "";
+  document.getElementById("btn-upload").disabled = true;
+  document.getElementById("btn-clear").style.display = "none";
+  document.getElementById("upload-status").innerHTML = "";
+  document.getElementById("progress-track").classList.remove("show");
+  document.getElementById("progress-bar").style.width = "0%";
+}
+document.getElementById("btn-clear").addEventListener("click", clearSelectedFile);
+
+document.getElementById("btn-upload").addEventListener("click", uploadSelectedFile);
+
+async function uploadSelectedFile() {
+  if (!state.selectedFile) return;
+  const btn = document.getElementById("btn-upload");
+  const label = document.getElementById("btn-upload-label");
+  btn.disabled = true;
+  label.innerHTML = '<span class="spinner"></span> Subiendo…';
+  document.getElementById("progress-track").classList.add("show");
+  document.getElementById("progress-bar").style.width = "12%";
+  $("#upload-status").innerHTML = "";
+
+  try {
+    await ensureFolder();
+    document.getElementById("progress-bar").style.width = "35%";
+    await uploadToDrive(state.selectedFile, state.folderId, (pct) => {
+      document.getElementById("progress-bar").style.width = pct + "%";
+    });
+    document.getElementById("progress-bar").style.width = "100%";
+    statusMessage($("#upload-status"), "ok", `"${state.selectedFile.name}" se guardó correctamente en la carpeta "${CONFIG.FOLDER_NAME}" de Google Drive.`);
+    localStorage.setItem("pdfportal_last_upload", new Date().toISOString());
+    clearFileKeepStatus();
+    refreshHomeStats();
+  } catch (err) {
+    console.error(err);
+    statusMessage($("#upload-status"), "err", "No se pudo subir el archivo: " + err.message);
+  } finally {
+    btn.disabled = false;
+    label.textContent = "Subir a Google Drive";
+  }
+}
+
+function clearFileKeepStatus() {
+  state.selectedFile = null;
+  fileInput.value = "";
+  document.getElementById("file-preview").innerHTML = "";
+  document.getElementById("btn-upload").disabled = true;
+  document.getElementById("btn-clear").style.display = "none";
+}
+
+function uploadToDrive(file, folderId, onProgress) {
+  return new Promise((resolve, reject) => {
+    const metadata = { name: file.name, parents: [folderId], mimeType: "application/pdf" };
+    const boundary = "-------pdfportal" + Date.now();
+    const delimiter = `\r\n--${boundary}\r\n`;
+    const closeDelim = `\r\n--${boundary}--`;
+
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
+    reader.onload = () => {
+      const base64Data = btoa(
+        new Uint8Array(reader.result).reduce((data, byte) => data + String.fromCharCode(byte), "")
+      );
+      const body =
+        delimiter +
+        "Content-Type: application/json; charset=UTF-8\r\n\r\n" +
+        JSON.stringify(metadata) +
+        delimiter +
+        "Content-Type: application/pdf\r\n" +
+        "Content-Transfer-Encoding: base64\r\n\r\n" +
+        base64Data +
+        closeDelim;
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,createdTime,size");
+      xhr.setRequestHeader("Authorization", "Bearer " + state.accessToken);
+      xhr.setRequestHeader("Content-Type", `multipart/related; boundary=${boundary}`);
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 90) + 5);
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText));
+        else reject(new Error(`Drive respondió con estado ${xhr.status}`));
+      };
+      xhr.onerror = () => reject(new Error("Error de red durante la subida."));
+      xhr.send(body);
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+/* ---------------------------------------------------------------------
+   Listado de archivos e Inicio
+--------------------------------------------------------------------- */
+async function loadFileList() {
+  const wrap = document.getElementById("files-table-wrap");
+  wrap.innerHTML = '<div class="empty-state"><span class="spinner" style="border-color:#00000022;border-top-color:#5B5F66;"></span><br><br>Cargando archivos…</div>';
+  try {
+    await ensureFolder();
+    const q = encodeURIComponent(`'${state.folderId}' in parents and trashed=false`);
+    const data = await driveFetch(
+      `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=createdTime desc&fields=files(id,name,webViewLink,createdTime,size)`
+    );
+    renderFileTable(data.files || []);
+  } catch (err) {
+    wrap.innerHTML = "";
+    statusMessage(wrap, "err", "No se pudo cargar la lista de archivos: " + err.message);
+  }
+}
+
+function renderFileTable(files) {
+  const wrap = document.getElementById("files-table-wrap");
+  if (!files.length) {
+    wrap.innerHTML = `<div class="empty-state">Todavía no hay archivos en esta carpeta.<br>Sube tu primer PDF desde el menú "Subir PDF".</div>`;
+    return;
+  }
+  const rows = files
+    .map((f) => {
+      const date = new Date(f.createdTime).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" });
+      return `<tr>
+        <td><div class="doc-name">${iconSvg("pdf")}${f.name}</div></td>
+        <td class="muted">${formatBytes(Number(f.size || 0))}</td>
+        <td class="muted">${date}</td>
+        <td><a class="link-btn" href="${f.webViewLink}" target="_blank" rel="noopener">Abrir en Drive ↗</a></td>
+      </tr>`;
+    })
+    .join("");
+  wrap.innerHTML = `<table>
+    <thead><tr><th>Documento</th><th>Tamaño</th><th>Subido</th><th></th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+document.getElementById("btn-refresh-files").addEventListener("click", loadFileList);
+
+async function refreshHomeStats() {
+  try {
+    await ensureFolder();
+    const q = encodeURIComponent(`'${state.folderId}' in parents and trashed=false`);
+    const data = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`);
+    document.getElementById("stat-count").textContent = (data.files || []).length;
+  } catch (e) {
+    document.getElementById("stat-count").textContent = "—";
+  }
+  const last = localStorage.getItem("pdfportal_last_upload");
+  document.getElementById("stat-last").textContent = last
+    ? new Date(last).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" })
+    : "Sin subidas aún";
+  document.getElementById("stat-folder").textContent = CONFIG.FOLDER_NAME;
+}
+
+/* ---------------------------------------------------------------------
+   Arranque
+--------------------------------------------------------------------- */
+window.addEventListener("load", () => {
+  let waited = 0;
+  const check = setInterval(() => {
+    waited += 100;
+    if (window.google && google.accounts && google.accounts.oauth2) {
+      clearInterval(check);
+      initGoogle();
+      if (isConfigured()) {
+        google.accounts.id.initialize({ client_id: CONFIG.GOOGLE_CLIENT_ID, auto_select: false });
+      }
+    } else if (waited >= 6000) {
+      clearInterval(check);
+      statusMessage(
+        $("#login-status"),
+        "err",
+        "No se pudo cargar el servicio de inicio de sesión de Google (accounts.google.com). Verifica tu conexión a internet o que el script no esté bloqueado por un adblock/firewall."
+      );
+    }
+  }, 100);
+});
+</script>
+</body>
+</html>
