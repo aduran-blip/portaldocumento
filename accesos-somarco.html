@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accesos — Sistemas Somarco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12161C;
+    --navy:#1F4E78;
+    --navy-dark:#16334F;
+    --steel:#2E6DA4;
+    --amber:#B8860B;
+    --amber-soft:#D9A441;
+    --paper:#F3F1EA;
+    --paper-card:#FFFFFF;
+    --line:#E1DED3;
+    --ink-soft:#5B5F66;
+    --radius:10px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    color:var(--ink);
+    background:var(--paper);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  h1,h2{font-family:'Space Grotesk',system-ui,sans-serif; letter-spacing:-0.01em;}
+  a{color:inherit; text-decoration:none;}
+
+  .topbar{
+    display:flex; align-items:center; gap:14px;
+    padding:16px 28px; border-bottom:1px solid var(--line); background:var(--paper-card);
+  }
+  .brand-dot{width:9px;height:9px;border-radius:2px;background:var(--amber-soft); flex-shrink:0;}
+  .topbar h1{font-size:1.05rem; margin:0;}
+  .back-link{
+    display:flex; align-items:center; gap:6px; font-size:.85rem; font-weight:600;
+    color:var(--ink-soft); border:1px solid var(--line);
+    padding:7px 12px; border-radius:8px;
+  }
+  .back-link:hover{background:var(--paper); color:var(--ink);}
+  .back-link svg{width:15px;height:15px;}
+
+  .content{
+    max-width:880px; margin:0 auto; padding:40px 24px 60px;
+  }
+  .content > .intro{margin-bottom:28px;}
+  .content > .intro h2{font-size:1.4rem; margin:0 0 6px 0;}
+  .content > .intro p{color:var(--ink-soft); font-size:.9rem; margin:0; line-height:1.5;}
+
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px;
+  }
+  .card{
+    display:flex; flex-direction:column; gap:10px;
+    background:var(--paper-card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px; transition:border-color .15s, transform .1s;
+  }
+  .card:hover{border-color:var(--steel); transform:translateY(-1px);}
+  .card .icon-wrap{
+    width:38px; height:38px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .card .icon-wrap svg{width:19px;height:19px;}
+  .card h3{font-size:1rem; margin:0; font-family:'Space Grotesk',sans-serif;}
+  .card p.desc{font-size:.82rem; color:var(--ink-soft); margin:0; line-height:1.45;}
+  .card .url{
+    font-size:.74rem; color:var(--ink-soft); word-break:break-all;
+    border-top:1px solid var(--line); padding-top:10px; margin-top:2px;
+  }
+  .card .open{
+    display:inline-flex; align-items:center; gap:6px; font-size:.82rem; font-weight:600;
+    color:var(--steel); margin-top:2px;
+  }
+  .card .open svg{width:14px;height:14px;}
+
+  .tag-tickets .icon-wrap{background:#EAF1F8; color:var(--steel);}
+  .tag-cpanel .icon-wrap{background:#FBEDE0; color:var(--amber);}
+  .tag-barcazas .icon-wrap{background:#E9F3EB; color:#3F7A4E;}
+  .tag-trazabilidad .icon-wrap{background:#F1EAF8; color:#6E4A9E;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back-link" href="index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    Portal
+  </a>
+  <span class="brand-dot"></span>
+  <h1>Accesos — Sistemas Somarco</h1>
+</div>
+
+<div class="content">
+  <div class="intro">
+    <h2>Enlaces directos</h2>
+    <p>Accesos rápidos a las plataformas internas de Somarco. Cada tarjeta abre el sistema correspondiente en una pestaña nueva.</p>
+  </div>
+
+  <div class="grid">
+
+    <a class="card tag-tickets" href="https://ti.somarco.cl/agent/somarco/somarco/tickets/list/all-cases" target="_blank" rel="noopener">
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12h6M9 16h6M9 8h6"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg>
+      </div>
+      <h3>Mesa de ayuda TI</h3>
+      <p class="desc">Listado de todos los tickets y casos de soporte.</p>
+      <div class="url">ti.somarco.cl/agent/somarco/somarco/tickets/list/all-cases</div>
+      <span class="open">Abrir
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+      </span>
+    </a>
+
+    <a class="card tag-cpanel" href="https://www.somarcojornalesarica.cl:2083/cpsess9007423043/frontend/jupiter/index.html" target="_blank" rel="noopener">
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><circle cx="6.5" cy="6.5" r=".6" fill="currentColor" stroke="none"/><circle cx="9" cy="6.5" r=".6" fill="currentColor" stroke="none"/></svg>
+      </div>
+      <h3>cPanel — Jornales Arica</h3>
+      <p class="desc">Panel de administración del hosting de Jornales Arica.</p>
+      <div class="url">somarcojornalesarica.cl:2083 (cPanel)</div>
+      <span class="open">Abrir
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+      </span>
+    </a>
+
+    <a class="card tag-barcazas" href="https://oficina.barcazas.cl/dashboard/mantenedores/estados/1f11ecda-05f4-6160-9dc5-809ad415766e" target="_blank" rel="noopener">
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17h18M4 17l1.5-6h13L20 17"/><path d="M12 3v8M8 11l4-4 4 4"/></svg>
+      </div>
+      <h3>Oficina Barcazas — Mantenedores</h3>
+      <p class="desc">Mantenedor de estados en el dashboard de Oficina Barcazas.</p>
+      <div class="url">oficina.barcazas.cl/dashboard/mantenedores/estados/…</div>
+      <span class="open">Abrir
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+      </span>
+    </a>
+
+    <a class="card tag-trazabilidad" href="https://swtrazabilidad-somarfrontend.vercel.app/dashboard/home" target="_blank" rel="noopener">
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+      </div>
+      <h3>Trazabilidad Somar</h3>
+      <p class="desc">Panel principal del sistema de trazabilidad.</p>
+      <div class="url">swtrazabilidad-somarfrontend.vercel.app/dashboard/home</div>
+      <span class="open">Abrir
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+      </span>
+    </a>
+
+  </div>
+</div>
+
+</body>
+</html>
